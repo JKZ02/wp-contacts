@@ -5,7 +5,7 @@ Description: Plugin for managing people and contacts.
 Version: 1.0
 Author: André Almeida
 */
-
+// Create management menu pages
 function management_menu_page() {
     add_menu_page(
         'Management Page',        
@@ -24,7 +24,7 @@ function management_menu_page() {
         'new-person',    
         'new_person_content'  
     );
-    
+    //We use null whenever we want to hide the page from the side panel.
     add_submenu_page(
         'null',    
         'Edit Person',         
@@ -79,12 +79,15 @@ function management_menu_page() {
         'delete_contact_content'  
     );
 }
+//Action hook to register the Management menu on the wp sidepanel
 add_action('admin_menu', 'management_menu_page');
 
-
+//Displays a list of people and options on each one
 function management_page_content() {
+    //wordpress db connection
     global $wpdb;
 
+    //retrieve list of users that aren't "Soft Deleted"
     $users = $wpdb->get_results("SELECT * FROM recruitment.person WHERE visible = 1");
 
     ?>
@@ -124,14 +127,14 @@ function management_page_content() {
     <?php
 }
 
-
+//Displays a form for creating a new person
 function new_person_content() {
     global $wpdb;
-
+    //check if the form has been submitted
     if (isset($_POST['form'])) {
         $name = sanitize_text_field($_POST['name']);
         $email = sanitize_email($_POST['email']);
-        
+        //checks if the email already exists
         $existing_email = $wpdb->get_var($wpdb->prepare("SELECT email FROM person WHERE email = %s", $email));
 
         if ($existing_email) {
@@ -192,10 +195,10 @@ function new_person_content() {
     </style>
     <?php
 }
-
+//Displays a form that allows editing of an existing person
 function edit_person_content() {
     global $wpdb;
-
+    //gets the specified person by id
     $person_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
     if (isset($_POST['submit'])) {
@@ -247,7 +250,7 @@ function edit_person_content() {
     </div>
     <?php
 }
-
+//Displays a confirmation page when trying to delete a person and "Soft Deletes" it
 function delete_person_content() {
     global $wpdb;
 
@@ -263,7 +266,7 @@ function delete_person_content() {
     if (isset($_POST['delete'])) {
         $wpdb->update(
             'person',
-            array('visible' => 0),
+            array('visible' => 0), //soft delete, won't be displayed but still exists in db
             array('ID' => $person_id),
             array('%d'),
             array('%d')
@@ -287,10 +290,10 @@ function delete_person_content() {
     </div>
     <?php
 }
-
+//Displays a form for creating a new contact
 function add_contact_content() {
     global $wpdb;
-
+    //API endpoint where we'll retrieve a list of countries name, countrycode and dialing code
     $countries_url = 'https://restcountries.com/v3.1/all?fields=cca2,name,idd';
     
     $person = isset($_GET['id']) ? intval($_GET['id']) : 0;
@@ -309,7 +312,7 @@ function add_contact_content() {
         echo "No countries found.";
         return;
     }
-
+    //order the countries alphabetically by their common name
     usort($countries, function($a, $b) {
         return strcmp($a['name']['common'], $b['name']['common']);
     });
@@ -319,10 +322,10 @@ function add_contact_content() {
         $country = sanitize_text_field($_POST['country']);
         $number = sanitize_text_field($_POST['number']);
 
-
+        //remove the + from the calling code to be saved on the db
         $country_code = ltrim($country, '+');
 
-
+        //numbers need to be exactly 9 digits
         if (preg_match('/^\d{9}$/', $number)) {
             
             $existing_contact = $wpdb->get_row(
@@ -367,7 +370,7 @@ function add_contact_content() {
     </div>
     <?php
 }
-
+//Displays a list of a person's contacts
 function list_contact_content() {
     global $wpdb;
 
@@ -406,7 +409,7 @@ function list_contact_content() {
     </div>
     <?php
 }
-
+//Displays a form to allow editing of a person's contact
 function edit_contact_content() {
     global $wpdb;
 
@@ -419,7 +422,7 @@ function edit_contact_content() {
         echo "<p>No contact found with the specified ID.</p>";
         return;
     }
-
+    //Same as before, fetch all the countries and sort them alphabetically below
     $countries_url = 'https://restcountries.com/v3.1/all?fields=cca2,name,idd';
     $response = wp_remote_get($countries_url);
 
@@ -467,7 +470,7 @@ function edit_contact_content() {
         <a href="<?php echo admin_url('admin.php?page=list-contact&id=' . $person_id); ?>" class="button">Return</a>
     </div>
     <?php
-
+    //Checks if the form is submitted
     if (isset($_POST['submit'])) {
         $contact_id = isset($_POST['contact_id']) ? intval($_POST['contact_id']) : 0;
         $country = sanitize_text_field($_POST['country']);
@@ -480,7 +483,7 @@ function edit_contact_content() {
             echo '<div class="error"><p>Contact with the same country code and number already exists.</p></div>';
             return;
         }
-        
+        //Number needs to be 9 digits and not negative
         if (strlen($number) !== 9 || !ctype_digit($number)) {
             echo '<div class="error"><p>Number must be 9 digits.</p></div>';
             return;
@@ -490,7 +493,7 @@ function edit_contact_content() {
         echo '<div class="updated"><p>Contact details updated successfully!</p></div>';
     }
 }
-
+//Displays a confirmation when deleting a contact and actually deletes it
 function delete_contact_content() {
     global $wpdb;
     

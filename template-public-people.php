@@ -10,14 +10,14 @@ global $wpdb;
 $search_query = isset($_GET['search']) ? sanitize_text_field($_GET['search']) : '';
 
 $sql = "SELECT * FROM person";
-
+//If the search bar is not empty we check if the text in it matches either of the three: name, email or number
 if (!empty($search_query)) {
     $sql .= $wpdb->prepare(" WHERE (name LIKE '%%%s%%' OR email LIKE '%%%s%%' OR ID IN (
             SELECT person FROM contact WHERE Number LIKE '%%%s%%'
         ))", $search_query, $search_query, $search_query);
 }
 
-$query = $wpdb->prepare($sql, $search_query, $search_query);
+$query = $wpdb->prepare($sql, $search_query, $search_query, $search_query);
 
 $people = $wpdb->get_results($query);
 
@@ -29,7 +29,7 @@ $people = $wpdb->get_results($query);
     </form>
 </div>
 <?php
-
+//List all the visible(not soft deleted) people returned from the db
 if ($people) {
     echo '<div class="people-list">';
     foreach ($people as $person) {
@@ -38,7 +38,7 @@ if ($people) {
         echo '<p>Email: ' . esc_html($person->email) . '</p>';
         
         $contacts = $wpdb->get_results($wpdb->prepare("SELECT * FROM contact WHERE person = %d", $person->ID));
-
+        //contacts toggle for better readability
         if ($contacts) {
             echo '<button class="toggle-contacts-btn" onclick="toggleContacts(this)">Contacts</button>';
             echo '<div class="contacts-list" style="display: none;">';
