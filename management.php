@@ -81,6 +81,7 @@ function management_menu_page() {
 }
 add_action('admin_menu', 'management_menu_page');
 
+
 function management_page_content() {
     global $wpdb;
 
@@ -106,7 +107,7 @@ function management_page_content() {
                         echo "<td>{$user->ID}</td>";
                         echo "<td>{$user->name}</td>";
                         echo "<td>{$user->email}</td>";
-                        echo "<td><a href='" . admin_url('admin.php?page=list-contact&id=' . $user->ID) . "' class='button'>List Contact</a>
+                        echo "<td><a href='" . admin_url('admin.php?page=list-contact&id=' . $user->ID) . "' class='button'>List Contacts</a>
                                   <a href='" . admin_url('admin.php?page=edit-person&id=' . $user->ID) . "' class='button'>Edit</a>
                                   <a style='background-color: #ff0000; color: #fff; border-color: #ff0000;' href='" . admin_url('admin.php?page=delete-person&id=' . $user->ID) . "' class='button'>Delete</a></td>";
                         echo "</tr>";
@@ -130,7 +131,7 @@ function new_person_content() {
     if (isset($_POST['form'])) {
         $name = sanitize_text_field($_POST['name']);
         $email = sanitize_email($_POST['email']);
-
+        
         $existing_email = $wpdb->get_var($wpdb->prepare("SELECT email FROM person WHERE email = %s", $email));
 
         if ($existing_email) {
@@ -446,16 +447,19 @@ function edit_contact_content() {
             <input type="hidden" name="contact_id" value="<?php echo $contact_id; ?>">
             <label for="country">Country:</label>
             <select id="country" name="country">
-                <?php foreach ($countries as $country) : ?>
-                    <?php
-                    $country_name = $country['name']['common'];
-                    $country_code = $country['idd']['root'] . $country['idd']['suffixes'][0];
-                    ?>
-                    <option value="<?php echo $country_code; ?>" <?php echo ($contact->CountryCode === $country_code) ? 'selected' : ''; ?>>
-                        <?php echo $country_name . ' (' . $country_code . ')'; ?>
-                    </option>
-                <?php endforeach; ?>
+            <?php foreach ($countries as $country) : ?>
+                <?php
+                $country_name = $country['name']['common'];
+                $country_code_with_plus = $country['idd']['root'] . $country['idd']['suffixes'][0];
+                $country_code = ltrim($country_code_with_plus, '+');
+                $selected = ($contact->CountryCode === $country_code) ? 'selected' : '';
+                ?>
+                <option value="<?php echo $country_code_with_plus; ?>" <?php echo $selected; ?>>
+                    <?php echo $country_name . ' (' . $country_code_with_plus . ')'; ?>
+                </option>
+            <?php endforeach; ?>
             </select><br><br>
+
             <label for="number">Number:</label>
             <input type="text" id="number" name="number" value="<?php echo $contact->Number; ?>" required><br><br>
             <input type="submit" name="submit" value="Save Changes" class="button button-primary">
